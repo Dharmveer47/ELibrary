@@ -1,0 +1,35 @@
+{
+  "name": "elib",
+  "version": "1.0.0",
+  "description": "e book api project",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon server.ts"
+  },
+  "author": "Dharmveer Singh <singdharmu89@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "@eslint/js": "^9.12.0",
+    "@types/bcrypt": "^5.0.2",
+    "@types/dotenv": "^6.1.1",
+    "@types/express": "^5.0.0",
+    "@types/http-errors": "^2.0.4",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/mongoose": "^5.11.96",
+    "@types/node": "^22.7.5",
+    "eslint": "^9.12.0",
+    "globals": "^15.11.0",
+    "nodemon": "^3.1.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.8.1"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "http-errors": "^2.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.7.2"
+  }
+}
