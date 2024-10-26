@@ -55,7 +55,7 @@ const createUser = async (
 
     // Response
 
-    res.json({
+    res.status(201).json({
       message: "User created successfully",
       access_token: token,
     });
@@ -64,4 +64,12 @@ const createUser = async (
   }
 };
 
-export { createUser };
+const loginUser = async (
+  req: Request<object, object, IReqBody>,
+  res: Response,
+  next: NextFunction
+)=>{
+  res.json({message:"login user"})
+}
+
+export { createUser, loginUser };
