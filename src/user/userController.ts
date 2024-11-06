@@ -68,8 +68,59 @@ const loginUser = async (
   req: Request<object, object, IReqBody>,
   res: Response,
   next: NextFunction
-)=>{
-  res.json({message:"login user"})
-}
+) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    const error = createHttpError(400, "All fields are required");
+    return next(error);
+  }
+
+  const [findError, user] = await catchError(userModal.findOne({ email }));
+
+  if (!user) {
+    const error = createHttpError(404, "User not found");
+    return next(error);
+  }
+
+  if (findError) {
+    return next(createHttpError(500, `error while finding ${findError}`));
+  }
+
+  const [compareError, comparePassword] = await catchError(
+    bcrypt.compare(password, user.password)
+  );
+
+  if (!comparePassword) {
+    const error = createHttpError(401, "Invalid credentials");
+    return next(error);
+  }
+
+  if (compareError) {
+    return next(createHttpError(500, `error while comparing ${compareError}`));
+  }
+
+  try {
+    // Token generation JWT
+    // second param we can pass algorithm
+    const token = sign(
+      {
+        id: user._id,
+      },
+      config.jwtSecret as string,
+      { expiresIn: "7d" }
+    );
+
+    // Response
+
+    res.json({
+      message: "User logged in successfully",
+      access_token: token,
+      data: { name: user.name, email: user.email },
+    });
+  } catch (error) {
+    return next(`error while creating token ${error}`);
+  }
+};
 
 export { createUser, loginUser };
