@@ -5,8 +5,9 @@ const createBook = async (
   res: Response,
   next: NextFunction
 ) => {
-
+    const {} = req.body
     res.json({ message: "Create Book" });
 };
 
 export { createBook };
+  
