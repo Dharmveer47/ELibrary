@@ -5,17 +5,29 @@ import path from "node:path";
 
 const bookRouter = express.Router();
 
-// file store local -> 
+// file store local ->
 const upload = multer({
-    dest: path.resolve(__dirname, '../../public/data/uploads'),
-    limits: {
-        
-    }
+  dest: path.resolve(__dirname, "../../public/data/uploads"),
+  limits: {
+    files: 3e7,
+  },
 });
-
 
 //routes
 
-bookRouter.post("/", createBook);
+bookRouter.post(
+  "/",
+  upload.fields([
+    {
+      name: "coverImage",
+      maxCount: 1,
+    },
+    {
+      name: "file",
+      maxCount: 1,
+    },
+  ]),
+  createBook
+);
 
 export default bookRouter;
