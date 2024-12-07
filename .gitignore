@@ -3,6 +3,7 @@
 env
 # dependencies
 /node_modules
+/public
 /.vscode
 /.pnp
 .pnp.js
