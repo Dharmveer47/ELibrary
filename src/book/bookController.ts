@@ -79,7 +79,8 @@ const createBook = async (
       createHttpError(500, `error while unlinking pdf ${pdfUnlinkError}`)
     );
   }
-
+  // @ts-ignore
+  console.log("userID", req.userId); 
   res.status(201).json({ newBook, id: newBook._id });
 };
 

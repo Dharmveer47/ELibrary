@@ -6,4 +6,5 @@ export interface IReqBody {
 
 export interface IUser extends IReqBody {
   _id: string;
+  
 }
