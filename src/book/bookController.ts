@@ -6,6 +6,7 @@ import fs from "node:fs";
 import { catchError } from "../utils/basicError";
 import createHttpError from "http-errors";
 import bookModel from "./bookModel";
+import { AuthRequest } from "../middlewares/authenticate";
 
 const createBook = async (
   req: Request<object, object, IBook>,
@@ -55,9 +56,10 @@ const createBook = async (
     return next(createHttpError(500, `error while uploading pdf ${_errorPdf}`));
   }
 
+  const _req = req as AuthRequest;
   const newBook = await bookModel.create({
     title: req.body.title,
-    author: "671d2ca2175008467148571f",
+    author: _req.userId,
     coverImage: _uploadCoverResult?.secure_url,
     description: req.body.description,
     genre: req.body.genre,
