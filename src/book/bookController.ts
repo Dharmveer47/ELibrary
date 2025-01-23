@@ -7,6 +7,7 @@ import { catchError } from "../utils/basicError";
 import createHttpError from "http-errors";
 import bookModel from "./bookModel";
 import { AuthRequest } from "../middlewares/authenticate";
+import mongoose from "mongoose";
 
 const createBook = async (
   req: Request<object, object, IBook>,
@@ -81,9 +82,113 @@ const createBook = async (
       createHttpError(500, `error while unlinking pdf ${pdfUnlinkError}`)
     );
   }
-  // @ts-ignore
-  console.log("userID", req.userId); 
+
+  console.log("userID", _req.userId);
   res.status(201).json({ newBook, id: newBook._id });
 };
 
-export { createBook };
+interface IReqParam {
+  bookId: string;
+}
+const updateBook = async (
+  req: Request<object, object, IBook>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { title, description, genre } = req.body;
+    const reqParam = req.params as IReqParam;
+    const bookId = reqParam.bookId;
+
+    // Validate the bookId
+    if (!mongoose.isValidObjectId(bookId)) {
+      throw createHttpError(400, "Invalid book ID");
+    }
+
+    const book = await bookModel.findById(bookId);
+
+    if (!book) {
+      throw createHttpError(404, "Book not found");
+    }
+
+    // Check access
+    const _req = req as AuthRequest;
+    if (book.author.toString() !== _req.userId) {
+      throw createHttpError(403, "Unauthorized");
+    }
+
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    let completeCoverImage = book.coverImage; // Default to existing cover image
+    let completeFileName = book.file; // Default to existing file
+    const coverImageMineType = files.coverImage[0].mimetype.split("/").at(-1);
+    // Handle cover image upload
+    if (files?.coverImage?.[0]) {
+      try {
+        const fileName = files.coverImage[0].filename;
+        const filePath = path.resolve(
+          __dirname,
+          "../../public/data/uploads/" + fileName
+        );
+
+        const uploadResult = await cloudinary.uploader.upload(filePath, {
+          filename_override: fileName,
+          folder: "book-covers",
+          format: coverImageMineType,
+        });
+
+        completeCoverImage = uploadResult.secure_url;
+        await fs.promises.unlink(filePath); // Remove the local file
+      } catch (err) {
+        console.error("Error uploading cover image:", err);
+        throw createHttpError(500, "Failed to upload cover image");
+      }
+    }
+
+    // Handle book file upload
+    if (files?.file?.[0]) {
+      try {
+        const bookFileName = files.file[0].filename;
+        const bookFilePath = path.resolve(
+          __dirname,
+          "../../public/data/uploads/" + bookFileName
+        );
+
+        const uploadResultPdf = await cloudinary.uploader.upload(bookFilePath, {
+          resource_type: "raw",
+          filename_override: bookFileName,
+          folder: "books",
+          format: "pdf",
+        });
+
+        completeFileName = uploadResultPdf.secure_url;
+        await fs.promises.unlink(bookFilePath); // Remove the local file
+      } catch (err) {
+        console.error("Error uploading book file:", err);
+        throw createHttpError(500, "Failed to upload book file");
+      }
+    }
+
+    // Update the book document
+    const updatedBook = await bookModel.findByIdAndUpdate(
+      bookId,
+      {
+        title,
+        description,
+        genre,
+        coverImage: completeCoverImage,
+        file: completeFileName,
+      },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedBook) {
+      throw createHttpError(500, "Failed to update book");
+    }
+
+    res.status(200).json({ updatedBook });
+  } catch (error) {
+    console.error("Error in updateBook function:", error);
+    next(error);
+  }
+};
+export { createBook, updateBook };
