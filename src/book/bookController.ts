@@ -193,10 +193,37 @@ const updateBook = async (
 };
 
 const listBooks = async (req: Request, res: Response, next: NextFunction) => {
+  // add pagination (mongoes paginate)
   const books = async () => await bookModel.find();
   const [error, response] = await catchError(books());
   if (error) return next(createHttpError(500, error));
   res.json(response);
 };
 
-export { createBook, updateBook, listBooks };
+const getSingleBook = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const bookId = req.params.bookId;
+
+    if (!bookId) {
+      return next(createHttpError(400, "Book ID is required"));
+    }
+
+    if (!mongoose.isValidObjectId(bookId)) {
+      return next(createHttpError(400, "Invalid book ID"));
+    }
+
+    const book = await bookModel.findById(bookId);
+
+    res.json(book);
+  } catch (error) {
+    return next(
+      createHttpError(401, "Error while getting book", { cause: error })
+    );
+  }
+};
+
+export { createBook, updateBook, listBooks, getSingleBook };
