@@ -191,4 +191,12 @@ const updateBook = async (
     next(error);
   }
 };
-export { createBook, updateBook };
+
+const listBooks = async (req: Request, res: Response, next: NextFunction) => {
+  const books = async () => await bookModel.find();
+  const [error, response] = await catchError(books());
+  if (error) return next(createHttpError(500, error));
+  res.json(response);
+};
+
+export { createBook, updateBook, listBooks };
