@@ -218,7 +218,7 @@ const getSingleBook = async (
 
     const book = await bookModel.findById(bookId);
 
-    res.json(book);
+    res.json(book || {});
   } catch (error) {
     return next(
       createHttpError(401, "Error while getting book", { cause: error })
@@ -226,4 +226,63 @@ const getSingleBook = async (
   }
 };
 
-export { createBook, updateBook, listBooks, getSingleBook };
+const deleteBook = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const bookId = req.params.bookId;
+
+    if (!bookId) {
+      return next(createHttpError(400, "Book ID is required"));
+    }
+
+    if (!mongoose.isValidObjectId(bookId)) {
+      return next(createHttpError(400, "Invalid book ID"));
+    }
+
+    const _book = await bookModel.findOne({ _id: bookId });
+
+    const _req = req as AuthRequest;
+    if (!_book) {
+      return next(createHttpError(404, "Book not found"));
+    }
+    // check access
+    if (_book?.author.toString() !== _req.userId) {
+      throw createHttpError(403, "Unauthorized");
+    }
+    // book-covers/zlvysstztpqdjpak994u
+    const coverImageSegments = _book.coverImage.split("/");
+    const coverImagePath =
+      coverImageSegments?.at(-2) +
+      "/" +
+      (coverImageSegments?.at(-1)?.split(".").at(0) || "");
+
+    const fileNameSegments = _book.file.split("/");
+    const filePath =
+      fileNameSegments?.at(-2) + "/" + (fileNameSegments?.at(-1) || "");
+
+    Promise.all([
+      cloudinary.uploader.destroy(coverImagePath),
+      cloudinary.uploader.destroy(filePath, {
+        resource_type: "raw",
+      }),
+    ]).then((res) => {
+      console.log("delete_res", res);
+    });
+    // await ;
+
+    await bookModel.deleteOne({ _id: bookId });
+
+    // general delete only send the status 204
+    res.json({
+      message: "Book deleted successfully",
+      _id: bookId,
+      filePath,
+      coverImagePath,
+    });
+  } catch (error) {
+    return next(
+      createHttpError(401, "Error while deleting book", { cause: error })
+    );
+  }
+};
+
+export { createBook, updateBook, listBooks, getSingleBook, deleteBook };
